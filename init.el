@@ -36,7 +36,7 @@
 
 (install-packages)
 
-(defvaralias 'c-basic-offset 'tab-width)
+;(defvaralias 'c-basic-offset 'tab-width)
 
 (global-linum-mode 1)            ; show line numbers
 (setq linum-format "%4d \u2502") ; space and solid line after line numbers
@@ -92,74 +92,43 @@
 
 (require 'cc-mode)
 
-
+;; company
 (require 'company)
 (add-hook 'after-init-hook 'global-company-mode)
+(delete 'company-semantic company-backends)
+;(define-key c-mode-map [(tab)] 'company-complete)
+;(define-key c++-mode-map [(tab)] 'company-complete)
 
-(require 'rtags)
-(require 'company-rtags)
+;; company-c-headers
+;(add-to-list 'company-backends 'company-c-headers)
 
-(setq rtags-completions-enabled t)
+(require 'irony)
 (eval-after-load 'company
-  '(add-to-list
-    'company-backends 'company-rtags))
-(setq rtags-autostart-diagnostics t)
-(rtags-enable-standard-keybindings)
+  '(add-to-list 'company-backends 'company-irony))
 
-(require 'rtags-helm)
-(setq rtags-use-helm t)
-
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'irony-mode)
-(add-hook 'objc-mode-hook 'irony-mode)
-
-
-(defun my-irony-mode-hook ()
-  (define-key irony-mode-map [remap completion-at-point]
-    'irony-completion-at-point-async)
-  (define-key irony-mode-map [remap complete-symbol]
-    'irony-completion-at-point-async))
-
-(add-hook 'irony-mode-hook 'my-irony-mode-hook)
-(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
-
-
-(add-hook 'irony-mode-hook 'company-irony-setup-begin-commands)
-(setq company-backends (delete 'company-semantic company-backends))
-;(eval-after-load 'company
-;  '(add-to-list
-;    'company-backends 'company-irony))
-
-(setq company-idle-delay 0)
-(define-key c-mode-map [(tab)] 'company-complete)
-(define-key c++-mode-map [(tab)] 'company-complete)
-
-
-(require 'company-irony)
 (require 'company-irony-c-headers)
 (eval-after-load 'company
-  '(add-to-list
-        'company-backends '(company-irony-c-headers company-irony)))
+  '(add-to-list 'company-backends 'company-irony-c-headers))
+
+;; Irony completion
+(add-hook 'c++-mode-hook 'irony-mode)
+(add-hook 'c-mode-hook 'irony-mode)
 
 
-(add-hook 'c++-mode-hook 'flycheck-mode)
-(add-hook 'c-mode-hook 'flycheck-mode)
+;; Flycheck
+;(require 'flycheck)
+;(add-hook 'c++-mode-hook 'flycheck-mode)
+;(add-hook 'c-mode-hook 'flycheck-mode)
+;(add-hook 'c++-mode-hook
+;          (lambda () (setq flycheck-clang-language-standard "c++1y")))
+;(add-hook 'c++-mode-hook
+;          (lambda () (setq flycheck-clang-standard-library "libc++")))
 
-(require 'flycheck-rtags)
+;(eval-after-load 'flycheck
+;    '(add-hook 'flycheck-mode-hook 'flycheck-irony-setup))
 
-(defun my-flycheck-rtags-setup ()
-  (flycheck-select-checker 'rtags)
-  (setq-local flycheck-highlighting-mode nil) ;; RTags creates more accurate overlays.
-  (setq-local flycheck-check-syntax-automatically nil))
-;; c-mode-common-hook is also called by c++-mode
-(add-hook 'c-mode-common-hook #'my-flycheck-rtags-setup)
-
-
-(eval-after-load 'flycheck
-    '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
-
-
-(setq c-default-style "linux")
+(setq c-default-style "linux"
+      c-basic-offset 4)
 
 ;; set appearance of a tab that is represented by 4 spaces
 (setq-default tab-width 4)
@@ -211,7 +180,6 @@
 (global-set-key (kbd "C-x r b") 'helm-bookmarks)
 (global-set-key (kbd "M-i") 'helm-swoop)
 
-
 ;; Package: projectile
 (require 'projectile)
 (projectile-mode)
@@ -224,6 +192,10 @@
 
 ;; Package zygospore
 (global-set-key (kbd "C-x 1") 'zygospore-toggle-delete-other-windows)
+
+(require 'rtags)
+(cmake-ide-setup)
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -232,9 +204,7 @@
  '(inhibit-startup-screen t)
  '(initial-scratch-message nil)
  '(org-agenda-files (quote ("~/todo.org")))
- '(safe-local-variable-values
-   (quote
-    ((cmake-ide-build-dir . "/home/jaa/projects/saas_hw/sw_repo_git/SW/FEE/build/make_fee")))))
+ )
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -242,6 +212,3 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-
-
-(cmake-ide-setup)
