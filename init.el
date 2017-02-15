@@ -213,6 +213,7 @@
 (global-set-key (kbd "<f4>") 'cmake-ide-compile)
 
 (setq compilation-auto-jump-to-first-error t)
+(setq compilation-scroll-output 'first-error)
 
 (require 'ansi-color)
 (defun endless/colorize-compilation ()
