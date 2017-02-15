@@ -47,6 +47,8 @@
 ; less annoying yes/no
 (fset 'yes-or-no-p 'y-or-n-p)
 
+; Nyan cat, showing position in buffer
+(nyan-mode)
 
 ;(require 'multiple-cursors )
 ;(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
@@ -95,24 +97,27 @@
 ;; company
 (require 'company)
 (add-hook 'after-init-hook 'global-company-mode)
-(delete 'company-semantic company-backends)
-;(define-key c-mode-map [(tab)] 'company-complete)
-;(define-key c++-mode-map [(tab)] 'company-complete)
-
-;; company-c-headers
-;(add-to-list 'company-backends 'company-c-headers)
+;(delete 'company-semantic company-backends)
 
 (require 'irony)
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'company-irony))
+;(require 'company-irony)
+;(eval-after-load 'company
+;  '(add-to-list 'company-backends 'company-irony))
 
-(require 'company-irony-c-headers)
+;(require 'company-irony-c-headers)
 (eval-after-load 'company
   '(add-to-list 'company-backends 'company-irony-c-headers))
+
 
 ;; Irony completion
 (add-hook 'c++-mode-hook 'irony-mode)
 (add-hook 'c-mode-hook 'irony-mode)
+
+
+
+(require 'company-clang)
+(eval-after-load 'company
+  '(add-to-list 'company-backends 'company-clang))
 
 
 ;; Flycheck
@@ -194,7 +199,28 @@
 (global-set-key (kbd "C-x 1") 'zygospore-toggle-delete-other-windows)
 
 (require 'rtags)
+;; (require 'company-rtags)
+;; (setq rtags-completions-enabled t)
+;; (eval-after-load 'company
+;;   '(add-to-(list )
+;;            'company-backends 'company-rtags))
+;; (setq rtags-autostart-diagnostics t)
+;; (rtags-enable-standard-keybindings)
+
 (cmake-ide-setup)
+
+(global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
+(global-set-key (kbd "<f4>") 'cmake-ide-compile)
+
+(require 'ansi-color)
+(defun endless/colorize-compilation ()
+  "Colorize from `compilation-filter-start' to `point'."
+  (let ((inhibit-read-only t))
+    (ansi-color-apply-on-region
+     compilation-filter-start (point))))
+
+(add-hook 'compilation-filter-hook
+          #'endless/colorize-compilation)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
