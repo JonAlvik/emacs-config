@@ -212,6 +212,8 @@
 (global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
 (global-set-key (kbd "<f4>") 'cmake-ide-compile)
 
+(setq compilation-auto-jump-to-first-error t)
+
 (require 'ansi-color)
 (defun endless/colorize-compilation ()
   "Colorize from `compilation-filter-start' to `point'."
