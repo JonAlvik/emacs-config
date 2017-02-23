@@ -6,19 +6,18 @@
 (defconst demo-packages
   '(anzu
     company
+    irony
+    rtags
+    cmake-ide
     duplicate-thing
-    ggtags
     helm
-    helm-gtags
     helm-projectile
     helm-swoop
-    ;; function-args
     clean-aindent-mode
     comment-dwim-2
     dtrt-indent
     ws-butler
-    iedit
-;    yasnippet
+    yasnippet
     smartparens
     projectile
     volatile-highlights
@@ -36,7 +35,6 @@
 
 (install-packages)
 
-;(defvaralias 'c-basic-offset 'tab-width)
 
 (global-linum-mode 1)            ; show line numbers
 (setq linum-format "%4d \u2502") ; space and solid line after line numbers
@@ -49,6 +47,7 @@
 
 ; Nyan cat, showing position in buffer
 (nyan-mode)
+(nyan-toggle-wavy-trail)
 
 ;(require 'multiple-cursors )
 ;(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
@@ -94,44 +93,44 @@
 
 (require 'cc-mode)
 
-;; company
-(require 'company)
-(add-hook 'after-init-hook 'global-company-mode)
-;(delete 'company-semantic company-backends)
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'irony)
-;(require 'company-irony)
-;(eval-after-load 'company
-;  '(add-to-list 'company-backends 'company-irony))
+(require 'company)
+(add-hook 'c++-mode-hook 'irony-mode)
+(add-hook 'c-mode-hook 'irony-mode)
+(add-hook 'objc-mode-hook 'irony-mode)
 
-;(require 'company-irony-c-headers)
+;; replace the `completion-at-point' and `complete-symbol' bindings in
+;;irony-mode's sbuffers by irony-mode's asynchronous function
+(defun my-irony-mode-hook ()
+  (define-key irony-mode-map [remap completion-at-point]
+    'irony-completion-at-point-async)
+  (define-key irony-mode-map [remap complete-symbol]
+    'irony-completion-at-point-async))
+
+(add-hook 'irony-mode-hook 'my-irony-mode-hook)
+
+(eval-after-load 'company
+  '(add-to-list 'company-backends 'company-irony))
+
 (eval-after-load 'company
   '(add-to-list 'company-backends 'company-irony-c-headers))
 
+(global-set-key (kbd "M-RET") 'company-complete)
 
-;; Irony completion
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'irony-mode)
+(add-hook 'after-init-hook 'global-company-mode)
 
-
-
-(require 'company-clang)
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'company-clang))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;; Flycheck
-;(require 'flycheck)
-;(add-hook 'c++-mode-hook 'flycheck-mode)
-;(add-hook 'c-mode-hook 'flycheck-mode)
-;(add-hook 'c++-mode-hook
-;          (lambda () (setq flycheck-clang-language-standard "c++1y")))
-;(add-hook 'c++-mode-hook
-;          (lambda () (setq flycheck-clang-standard-library "libc++")))
+(require 'flycheck)
+(add-hook 'c++-mode-hook 'flycheck-mode)
+(add-hook 'c-mode-hook 'flycheck-mode)
+(eval-after-load 'flycheck
+  '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
 
-;(eval-after-load 'flycheck
-;    '(add-hook 'flycheck-mode-hook 'flycheck-irony-setup))
-
+; This gets reverted at startup, why?!
 (setq c-default-style "linux"
       c-basic-offset 4)
 
@@ -162,9 +161,13 @@
 (require 'ws-butler)
 (add-hook 'prog-mode-hook 'ws-butler-mode)
 
+; company-yasnippet creates too much noise in company-complete
 ;; Package: yasnippet
-(require 'yasnippet)
-(yas-global-mode 1)
+;; (require 'yasnippet)
+;; (yas-global-mode 1)
+;; (eval-after-load 'company
+;;   '(add-to-list 'company-backends 'company-yasnippet))
+
 
 ;; Package: smartparens
 (require 'smartparens-config)
@@ -184,6 +187,7 @@
 (global-set-key (kbd "M-y") 'helm-show-kill-ring)
 (global-set-key (kbd "C-x r b") 'helm-bookmarks)
 (global-set-key (kbd "M-i") 'helm-swoop)
+(global-set-key (kbd "C-x f") 'helm-find-files)
 
 ;; Package: projectile
 (require 'projectile)
@@ -199,22 +203,29 @@
 (global-set-key (kbd "C-x 1") 'zygospore-toggle-delete-other-windows)
 
 (require 'rtags)
-;; (require 'company-rtags)
-;; (setq rtags-completions-enabled t)
-;; (eval-after-load 'company
-;;   '(add-to-(list )
-;;            'company-backends 'company-rtags))
-;; (setq rtags-autostart-diagnostics t)
-;; (rtags-enable-standard-keybindings)
-
 (cmake-ide-setup)
 
+;;
 (global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
 (global-set-key (kbd "<f4>") 'cmake-ide-compile)
 
 (setq compilation-auto-jump-to-first-error t)
 (setq compilation-scroll-output 'first-error)
 
+;; Control compilation window
+(defun my-compilation-hook ()
+  (when (not (get-buffer-window "*compilation*"))
+    (save-selected-window
+      (save-excursion
+        (let* ((w (split-window-vertically))
+               (h (window-height w)))
+          (select-window w)
+          (switch-to-buffer "*compilation*")
+          (shrink-window (- h compilation-window-height)))))))
+(add-hook 'compilation-mode-hook 'my-compilation-hook)
+
+
+;; ansi colors in compile output
 (require 'ansi-color)
 (defun endless/colorize-compilation ()
   "Colorize from `compilation-filter-start' to `point'."
@@ -224,6 +235,8 @@
 
 (add-hook 'compilation-filter-hook
           #'endless/colorize-compilation)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
