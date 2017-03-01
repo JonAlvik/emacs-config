@@ -244,6 +244,11 @@
 
 (add-hook 'python-mode-hook 'my/python-mode-hook)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Theme
+(add-hook 'after-init-hook
+          (lambda () (load-theme 'cyberpunk t)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
