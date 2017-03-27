@@ -1,39 +1,19 @@
 (require 'package)
-(add-to-list 'package-archives
-	     '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t)
+(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/") t)
 (package-initialize)
 
-(defconst demo-packages
-  '(anzu
-    company
-    irony
-    rtags
-    cmake-ide
-    duplicate-thing
-    helm
-    helm-projectile
-    helm-swoop
-    clean-aindent-mode
-    comment-dwim-2
-    dtrt-indent
-    ws-butler
-    yasnippet
-    smartparens
-    projectile
-    volatile-highlights
-    undo-tree
-    zygospore))
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
 
-(defun install-packages ()
-  "Install all required packages."
-  (interactive)
-  (unless package-archive-contents
-    (package-refresh-contents))
-  (dolist (package demo-packages)
-    (unless (package-installed-p package)
-      (package-install package))))
+(eval-when-compile (require 'use-package))
+(require 'diminish)
+(require 'bind-key)
 
-(install-packages)
+; Print loading of packages
+(setq use-package-verbose t)
 
 
 (global-linum-mode 1)            ; show line numbers
@@ -45,9 +25,13 @@
 ; less annoying yes/no
 (fset 'yes-or-no-p 'y-or-n-p)
 
-; Nyan cat, showing position in buffer
-(nyan-mode)
-(nyan-toggle-wavy-trail)
+
+;Nyan cat, showing position in buffer
+(use-package nyan-mode :ensure t
+  :init
+  (progn
+    (nyan-mode)
+    (nyan-toggle-wavy-trail)))
 
 ;(require 'multiple-cursors )
 ;(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
@@ -56,17 +40,14 @@
 ;(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
 ;(multiple-cursors-mode 1)
 
-;;;
-;;; Org Mode
-;;;
-(require 'org)
-;;
-;; Standard key bindings
-(global-set-key "\C-cl" 'org-store-link)
-(global-set-key "\C-ca" 'org-agenda)
-(global-set-key "\C-cb" 'org-iswitchb)
-(setq org-log-done t)
-;(setq-default major-mode 'org-mode) ;kinda annoying
+(use-package org
+  :ensure t
+  :config
+  (progn
+    (setq org-log-done t))
+  :bind (("C-c l" . org-store-link)
+         ("C-c a" . org-agenda)
+         ("C-c b" . org-iswitchb)))
 
 
 ;; wind move, move between windows with shift-arrow
@@ -85,6 +66,7 @@
             (if (derived-mode-p 'c-mode 'c++-mode)
                 (cppcm-reload-all)
               )))
+
 ;; OPTIONAL, somebody reported that they can use this package with Fortran
 ;(add-hook 'c90-mode-hook (lambda () (cppcm-reload-all)))
 ;; OPTIONAL, avoid typing full path when starting gdb
@@ -94,14 +76,20 @@
 ;(setq cppcm-extra-preprocss-flags-from-user '("-I/usr/src/linux/include" "-DNDEBUG"))
 
 
-(require 'cc-mode)
+(use-package cc-mode
+  :ensure t)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(require 'irony)
-(require 'company)
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'irony-mode)
-(add-hook 'objc-mode-hook 'irony-mode)
+(use-package company
+  :ensure t
+  :bind (
+	 ("M-RET" . company-complete))
+  :config
+  (progn
+    (add-to-list 'company-backends 'company-irony)
+    (add-to-list 'company-backends 'company-irony-c-headers)
+    (add-hook 'after-init-hook 'global-company-mode))
+  )
+
 
 ;; replace the `completion-at-point' and `complete-symbol' bindings in
 ;;irony-mode's sbuffers by irony-mode's asynchronous function
@@ -111,30 +99,55 @@
   (define-key irony-mode-map [remap complete-symbol]
     'irony-completion-at-point-async))
 
-(add-hook 'irony-mode-hook 'my-irony-mode-hook)
 
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'company-irony))
 
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'company-irony-c-headers))
+(use-package irony
+  :ensure t
+  :config
+  (progn
+    (add-hook 'c-mode-common-hook 'irony-mode)
+    (add-hook 'c++-mode-common-hook 'irony-mode)
+    (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+    (use-package company-irony
+      :ensure t
+      :config
+      (progn
+        (push 'company-irony company-backends)))))
 
-(global-set-key (kbd "M-RET") 'company-complete)
+;; (defun my-cmake-ide-hook ()
+;;   (cmake-ide-load-db))
 
-(add-hook 'after-init-hook 'global-company-mode)
+;; (use-package rtags
+;;   :ensure t
+;;   :after projectile
+;;   :bind
+;;   ("<f3>" . rtags-find-symbol-at-point))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; (use-package cmake-ide
+;;   :ensure t
+;;   :after rtags
+;;   :bind
+;;   ("<f4>" . cmake-ide-compile)
+;;   :config
+;;   (progn
+;;     (cmake-ide-setup)))
 
 ;; Flycheck
-(require 'flycheck)
-(add-hook 'c++-mode-hook 'flycheck-mode)
-(add-hook 'c-mode-hook 'flycheck-mode)
+(use-package flycheck
+  :ensure t
+  :config
+  (progn
+    (add-hook 'c++-mode-hook 'flycheck-mode)
+    (add-hook 'c-mode-hook 'flycheck-mode)))
+
+
 (defun flycheck-python-setup ()
   (flycheck-mode))
 (add-hook 'python-mode-hook #'flycheck-python-setup)
 (eval-after-load 'flycheck
   '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
+
 
 ; This gets reverted at startup, why?!
 (setq c-default-style "linux"
@@ -155,17 +168,27 @@
  gdb-show-main t
  )
 
-;; Package: clean-aindent-mode
-(require 'clean-aindent-mode)
-(add-hook 'prog-mode-hook 'clean-aindent-mode)
 
-;; Package: dtrt-indent
-(require 'dtrt-indent)
-(dtrt-indent-mode 1)
+(use-package clean-aindent-mode
+  :ensure t
+  :config
+  (progn
+    (add-hook 'prog-mode-hook 'clean-aindent-mode)))
 
-;; Package: ws-butler
-(require 'ws-butler)
-(add-hook 'prog-mode-hook 'ws-butler-mode)
+
+(use-package dtrt-indent
+  :ensure t
+  :config
+  (progn
+    (dtrt-indent-mode 1)))
+
+
+(use-package ws-butler
+  :ensure t
+  :config
+  (progn
+    (add-hook 'prog-mode-hook 'ws-butler-mode)))
+
 
 ; company-yasnippet creates too much noise in company-complete
 ;; Package: yasnippet
@@ -175,65 +198,75 @@
 ;;   '(add-to-list 'company-backends 'company-yasnippet))
 
 
-;; Package: smartparens
-(require 'smartparens-config)
-(setq sp-base-key-bindings 'paredit)
-(setq sp-autoskip-closing-pair 'always)
-(setq sp-hybrid-kill-entire-symbol nil)
-(sp-use-paredit-bindings)
+(use-package smartparens
+  :ensure t
+  :config
+  (progn
+    (setq sp-base-key-bindings 'paredit)
+    (setq sp-autoskip-closing-pair 'always)
+    (setq sp-hybrid-kill-entire-symbol nil)
+    (sp-use-paredit-bindings)
+    (show-smartparens-global-mode +1)
+    (smartparens-global-mode 1)))
 
-(show-smartparens-global-mode +1)
-(smartparens-global-mode 1)
+(use-package helm
+  :ensure t
+  :init (helm-mode 1)
+  :config
+  (progn
+    (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action))
+  :bind (("M-x" . helm-M-x)
+         ("M-y" . helm-show-kill-ring)
+         ("C-x r b" . helm-bookmarks)
+         ("M-i" . helm-swoop)
+         ("C-x f" . helm-find-files)
+         ("C-x C-f" . helm-find-files)))
 
-;;helm
-(require 'helm-config)
-(helm-mode 1)
-(define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
-(global-set-key (kbd "M-x") 'helm-M-x)
-(global-set-key (kbd "M-y") 'helm-show-kill-ring)
-(global-set-key (kbd "C-x r b") 'helm-bookmarks)
-(global-set-key (kbd "M-i") 'helm-swoop)
-(global-set-key (kbd "C-x f") 'helm-find-files)
-(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(use-package projectile
+  :ensure t
+  :after helm
+  :config
+  (progn
+    (setq projectile-enable-caching t))
+  :init
+  (projectile-mode))
 
-;; Package: projectile
-(require 'projectile)
-(projectile-mode)
-(setq projectile-enable-caching t)
+(use-package helm-projectile
+  :ensure t
+  :after projectile
+  :init
+  (progn
+    (helm-projectile-on)
+    (setq projectile-completion-system 'helm)
+    (setq projectile-indexing-method 'alien)))
 
-(require 'helm-projectile)
-(helm-projectile-on)
-(setq projectile-completion-system 'helm)
-(setq projectile-indexing-method 'alien)
+(use-package zygospore
+  :ensure t
+  :bind
+  (("C-x 1" . zygospore-toggle-delete-other-windows)))
 
-;; Package zygospore
-(global-set-key (kbd "C-x 1") 'zygospore-toggle-delete-other-windows)
-
-(require 'rtags)
-(cmake-ide-setup)
-
-;;
-(global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
-(global-set-key (kbd "<f4>") 'cmake-ide-compile)
 
 (setq compilation-auto-jump-to-first-error t)
 (setq compilation-scroll-output 'first-error)
 
+
 ;; Control compilation window
-(defun my-compilation-hook ()
-  (when (not (get-buffer-window "*compilation*"))
-    (save-selected-window
-      (save-excursion
-        (let* ((w (split-window-vertically))
-               (h (window-height w)))
-          (select-window w)
-          (switch-to-buffer "*compilation*")
-          (shrink-window (- h compilation-window-height)))))))
-(add-hook 'compilation-mode-hook 'my-compilation-hook)
+;; (defun my-compilation-hook ()
+;;   (when (not (get-buffer-window "*compilation*"))
+;;     (save-selected-window
+;;       (save-excursion
+;;         (let* ((w (split-window-vertically))
+;;                (h (window-height w)))
+;;           (select-window w)
+;;           (switch-to-buffer "*compilation*")
+;;           (shrink-window (- h compilation-window-height)))))))
+;; (add-hook 'compilation-mode-hook 'my-compilation-hook)
 
 
 ;; ansi colors in compile output
-(require 'ansi-color)
+(use-package ansi-color
+  :ensure t)
+
 (defun endless/colorize-compilation ()
   "Colorize from `compilation-filter-start' to `point'."
   (let ((inhibit-read-only t))
@@ -243,18 +276,26 @@
 (add-hook 'compilation-filter-hook
           #'endless/colorize-compilation)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; company-jedi
-(require 'company-jedi)
+
 (defun my/python-mode-hook ()
   (add-to-list 'company-backends 'company-jedi))
 
-(add-hook 'python-mode-hook 'my/python-mode-hook)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Theme
+(use-package company-jedi
+  :ensure t
+  :config
+  (progn
+    (add-hook 'python-mode-hook 'my/python-mode-hook)))
+
+
 (add-hook 'after-init-hook
           (lambda () (load-theme 'cyberpunk t)))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(require 'rtags)
+(cmake-ide-setup)
+
+(global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
+(global-set-key (kbd "<f4>") 'cmake-ide-compile)
 
 
 (custom-set-variables
@@ -265,7 +306,7 @@
  '(inhibit-startup-screen t)
  '(initial-scratch-message nil)
  '(org-agenda-files (quote ("~/todo.org")))
- )
+ '(safe-local-variable-values (quote ((cmake-ide-build-dir . "../build")))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
