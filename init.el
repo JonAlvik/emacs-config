@@ -60,7 +60,6 @@
 
 ; treat .h-files as c++
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
-
 (add-hook 'c-mode-common-hook
           (lambda ()
             (if (derived-mode-p 'c-mode 'c++-mode)
@@ -85,9 +84,10 @@
 	 ("M-RET" . company-complete))
   :config
   (progn
+    (global-company-mode 1)
+    ;(add-hook 'after-init-hook 'global-company-mode)
     (add-to-list 'company-backends 'company-irony)
-    (add-to-list 'company-backends 'company-irony-c-headers)
-    (add-hook 'after-init-hook 'global-company-mode))
+    (add-to-list 'company-backends 'company-irony-c-headers))
   )
 
 
@@ -99,7 +99,11 @@
   (define-key irony-mode-map [remap complete-symbol]
     'irony-completion-at-point-async))
 
+(defun my-irony-c++-mode-hook ()
+  (setq irony-additional-clang-options '("-std=c++1y")))
 
+(defun my-irony-c-mode-hook ()
+  (setq irony-additional-clang-options '("-std=c99")))
 
 (use-package irony
   :ensure t
@@ -107,6 +111,8 @@
   (progn
     (add-hook 'c-mode-common-hook 'irony-mode)
     (add-hook 'c++-mode-common-hook 'irony-mode)
+    (add-hook 'c++-mode-hook 'my-irony-c++-mode-hook)
+    (add-hook 'c-mode-hook 'my-irony-c-mode-hook)
     (add-hook 'irony-mode-hook 'my-irony-mode-hook)
     (use-package company-irony
       :ensure t
@@ -139,7 +145,11 @@
   :config
   (progn
     (add-hook 'c++-mode-hook 'flycheck-mode)
-    (add-hook 'c-mode-hook 'flycheck-mode)))
+    (add-hook 'c-mode-hook 'flycheck-mode)
+    ;(add-hook 'c++-mode-hook (lambda () (setq flycheck-clang-language-standard "c++1y")))
+    ;(add-hook 'c++-mode-hook (lambda () (setq flycheck-gcc-language-standard "c++1y")))
+    ))
+
 
 
 (defun flycheck-python-setup ()
@@ -147,6 +157,8 @@
 (add-hook 'python-mode-hook #'flycheck-python-setup)
 (eval-after-load 'flycheck
   '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
+
+
 
 
 ; This gets reverted at startup, why?!
@@ -282,6 +294,8 @@
 
 (use-package company-jedi
   :ensure t
+  :bind
+  (("<f3>" . jedi:goto-definition))
   :config
   (progn
     (add-hook 'python-mode-hook 'my/python-mode-hook)))
@@ -291,11 +305,28 @@
           (lambda () (load-theme 'cyberpunk t)))
 
 
-(require 'rtags)
-(cmake-ide-setup)
 
-(global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
-(global-set-key (kbd "<f4>") 'cmake-ide-compile)
+(defun my-c-mode-setup ()
+  (message "my-c-mode-setup")
+  (require 'rtags)
+  (cmake-ide-setup)
+  (global-set-key (kbd "<f3>") 'rtags-find-symbol-at-point)
+  (global-set-key (kbd "<f4>") 'cmake-ide-compile))
+
+
+(add-hook 'c-mode-common-hook 'my-c-mode-setup)
+
+(use-package diff-hl
+  :ensure t
+  :config
+  (global-diff-hl-mode))
+
+;; (use-package highline :ensure t
+;;   :init
+;;   (add-hook 'prog-mode-hook 'highline-mode)
+;;   :config
+;;   (progn
+;;     (set-face-background 'highline-face (shade-color 09))))
 
 
 (custom-set-variables
@@ -306,7 +337,14 @@
  '(inhibit-startup-screen t)
  '(initial-scratch-message nil)
  '(org-agenda-files (quote ("~/todo.org")))
- '(safe-local-variable-values (quote ((cmake-ide-build-dir . "../build")))))
+ '(safe-local-variable-values
+   (quote
+    ((setq irony-additional-clang-options
+           (quote
+            ("-std=c++11")))
+     (irony-additional-clang-options . "-std=c++11")
+     (irony-additional-clang-options . "-std=c++1y")
+     (cmake-ide-build-dir . "../build")))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
