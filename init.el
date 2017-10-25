@@ -12,19 +12,37 @@
 (require 'diminish)
 (require 'bind-key)
 
+;(setq debug-on-error t)
+
 ; Print loading of packages
 (setq use-package-verbose t)
 
+(setq-default scroll-error-top-bottom t)
 
-(global-linum-mode 1)            ; show line numbers
-(setq linum-format "%4d \u2502") ; space and solid line after line numbers
+;(global-linum-mode 1)            ; show line numbers
+;(setq linum-format "%4d \u2502") ; space and solid line after line numbers
+
+(use-package nlinum
+  :ensure t
+  :init      (setq nlinum-format (quote " %5d "))
+  :config
+  (progn
+    (add-hook 'prog-mode-hook 'nlinum-mode)))
+
+
+(use-package nlinum-hl
+  :ensure t
+  :after nlinum
+  :config
+  (setq nlinum-highlight-current-line t))
+;  (add-hook 'nlinum-mode-hook #'nlinum-hl-mode))
+
 
 (setq backup-directory-alist '(("." . "~/.emacs_backup"))) ; Save backups here
 (setq auto-save-default nil)     ; stop creating autosave files
 
 ; less annoying yes/no
 (fset 'yes-or-no-p 'y-or-n-p)
-
 
 ;Nyan cat, showing position in buffer
 (use-package nyan-mode :ensure t
@@ -210,16 +228,16 @@
 ;;   '(add-to-list 'company-backends 'company-yasnippet))
 
 
-(use-package smartparens
-  :ensure t
-  :config
-  (progn
-    (setq sp-base-key-bindings 'paredit)
-    (setq sp-autoskip-closing-pair 'always)
-    (setq sp-hybrid-kill-entire-symbol nil)
-    (sp-use-paredit-bindings)
-    (show-smartparens-global-mode +1)
-    (smartparens-global-mode 1)))
+;(use-package smartparens
+;  :ensure t
+;  :config
+;  (progn
+;    (setq sp-base-key-bindings 'paredit)
+;    (setq sp-autoskip-closing-pair 'always)
+;    (setq sp-hybrid-kill-entire-symbol nil)
+;    (sp-use-paredit-bindings)
+;    (show-smartparens-global-mode +1)
+;    (smartparens-global-mode 1)))
 
 (use-package helm
   :ensure t
@@ -239,7 +257,11 @@
   :after helm
   :config
   (progn
-    (setq projectile-enable-caching t))
+    (setq projectile-enable-caching t)
+    (setq projectile-mode-line
+         '(:eval (format " Projectile[%s]"
+                        (projectile-project-name))))
+    )
   :init
   (projectile-mode))
 
@@ -300,9 +322,19 @@
   (progn
     (add-hook 'python-mode-hook 'my/python-mode-hook)))
 
+;; (use-package cyberpunk-theme
+;;   :ensure t
+;;   :config
+;;   (progn
+;;     (add-hook 'after-init-hook
+;;           (lambda () (load-theme 'cyberpunk t)))))
 
-(add-hook 'after-init-hook
-          (lambda () (load-theme 'cyberpunk t)))
+(use-package material-theme
+  :ensure t
+  :config
+  (progn
+    (add-hook 'after-init-hook
+          (lambda () (load-theme 'material t)))))
 
 
 
@@ -321,6 +353,17 @@
   :config
   (global-diff-hl-mode))
 
+
+;; (defun shade-color (intensity)
+;;   "compute new intensity of #rgb with alpha value for background"
+;;   (interactive "nIntensity of the shade : ")
+;;   (apply 'format "#%02x%02x%02x"
+;;          (mapcar (lambda (x)
+;;                    (if (> (lsh x -8) intensity)
+;;                        (- (lsh x -8) intensity)
+;;                      0))
+;;                  (color-values (cdr (assoc 'background-color (frame-parameters)))))))
+
 ;; (use-package highline :ensure t
 ;;   :init
 ;;   (add-hook 'prog-mode-hook 'highline-mode)
@@ -329,22 +372,79 @@
 ;;     (set-face-background 'highline-face (shade-color 09))))
 
 
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+
+(use-package saveplace
+  :config
+  (setq-default save-place t)
+  (setq save-place-file (expand-file-name ".places" user-emacs-directory)))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-faces-vector
+   [default bold shadow italic underline bold bold-italic bold])
+ '(custom-safe-themes
+   (quote
+    ("98cc377af705c0f2133bb6d340bf0becd08944a588804ee655809da5d8140de6" "6c35ffc17f8288be4c7866deb7437e8af33cd09930e195738cdfef911ab77274" "235dc2dd925f492667232ead701c450d5c6fce978d5676e54ef9ca6dd37f6ceb" default)))
+ '(hl-sexp-background-color "#1c1f26")
  '(inhibit-startup-screen t)
  '(initial-scratch-message nil)
  '(org-agenda-files (quote ("~/todo.org")))
  '(safe-local-variable-values
    (quote
-    ((setq irony-additional-clang-options
+    ((cmake-ide-build-dir . "/home/jaa/projects/saas_hw/sw_repo_git/SW/FEE/build/make_fee")
+     (cmake-ide-build-dir . "./build/make_fee")
+     (cmake-ide-build-dir . "./build/make_test")
+     (cmake-ide-build-dir . "../build/ROC/release/cmake")
+     (setq irony-additional-clang-options
+           (quote
+            ("-std=c89")))
+     (cmake-ide-build-dir . "/home/jaa/projects/saas_hw/sw_repo_git/SW/common/bootloader/u-boot")
+     (cmake-ide-project-dir . "/home/jaa/projects/saas_hw/sw_repo_git/SW/common/bootloader/u-boot")
+     (cmake-ide-build-dir . "/home/jaa/projects/saas_hw/sw_repo_git/SW/build/u-boot/saas_roc")
+     (c++-mode
+      ((setq irony-additional-clang-options
+             (quote
+              ("-std=c++11")))
+       (flycheck-gcc-language-standard . "c++1y")
+       (flycheck-clang-language-standard . "c++1y")))
+     (cmake-ide-compile-command\. "/home/jaa/projects/saas_hw/sw_repo_git/SW/common/bootloader/u-boot/jalla.sh")
+     (cmake-ide-build-command\. "/home/jaa/projects/saas_hw/sw_repo_git/SW/common/bootloader/u-boot/jalla.sh")
+     (cmake-ide-project-dir . "/home/jaa/projects/saas_hw/sw_repo_git/SW/common/bootloader/u-boot/.")
+     (setq irony-additional-clang-options
            (quote
             ("-std=c++11")))
      (irony-additional-clang-options . "-std=c++11")
      (irony-additional-clang-options . "-std=c++1y")
-     (cmake-ide-build-dir . "../build")))))
+     (cmake-ide-build-dir . "../build"))))
+ '(vc-annotate-background nil)
+ '(vc-annotate-color-map
+   (quote
+    ((20 . "#f36c60")
+     (40 . "#ff9800")
+     (60 . "#fff59d")
+     (80 . "#8bc34a")
+     (100 . "#81d4fa")
+     (120 . "#4dd0e1")
+     (140 . "#b39ddb")
+     (160 . "#f36c60")
+     (180 . "#ff9800")
+     (200 . "#fff59d")
+     (220 . "#8bc34a")
+     (240 . "#81d4fa")
+     (260 . "#4dd0e1")
+     (280 . "#b39ddb")
+     (300 . "#f36c60")
+     (320 . "#ff9800")
+     (340 . "#fff59d")
+     (360 . "#8bc34a"))))
+ '(vc-annotate-very-old-color nil))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
