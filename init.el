@@ -44,20 +44,6 @@
 ; less annoying yes/no
 (fset 'yes-or-no-p 'y-or-n-p)
 
-;Nyan cat, showing position in buffer
-(use-package nyan-mode :ensure t
-  :init
-  (progn
-    (nyan-mode)
-    (nyan-toggle-wavy-trail)))
-
-;(require 'multiple-cursors )
-;(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
-;(global-set-key (kbd "C->") 'mc/mark-next-like-this)
-;(global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
-;(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
-;(multiple-cursors-mode 1)
-
 (use-package org
   :ensure t
   :config
@@ -68,13 +54,9 @@
          ("C-c b" . org-iswitchb)))
 
 
-;; wind move, move between windows with shift-arrow
-;(when (fboundp 'windmove-default-keybindings)
-;  (windmove-default-keybindings))
-
-;;cpputils-cmake
-;(add-to-list 'load-path "~/.emacs.d/plugins")
-;(require 'cpputils-cmake)
+;; wind move, move between windows with meta-arrow
+(when (fboundp 'windmove-default-keybindings)
+  (windmove-default-keybindings 'meta))
 
 ; treat .h-files as c++
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
@@ -137,25 +119,6 @@
       :config
       (progn
         (push 'company-irony company-backends)))))
-
-;; (defun my-cmake-ide-hook ()
-;;   (cmake-ide-load-db))
-
-;; (use-package rtags
-;;   :ensure t
-;;   :after projectile
-;;   :bind
-;;   ("<f3>" . rtags-find-symbol-at-point))
-
-
-;; (use-package cmake-ide
-;;   :ensure t
-;;   :after rtags
-;;   :bind
-;;   ("<f4>" . cmake-ide-compile)
-;;   :config
-;;   (progn
-;;     (cmake-ide-setup)))
 
 ;; Flycheck
 (use-package flycheck
@@ -228,16 +191,16 @@
 ;;   '(add-to-list 'company-backends 'company-yasnippet))
 
 
-;(use-package smartparens
-;  :ensure t
-;  :config
-;  (progn
-;    (setq sp-base-key-bindings 'paredit)
-;    (setq sp-autoskip-closing-pair 'always)
-;    (setq sp-hybrid-kill-entire-symbol nil)
-;    (sp-use-paredit-bindings)
-;    (show-smartparens-global-mode +1)
-;    (smartparens-global-mode 1)))
+(use-package smartparens
+ :ensure t
+ :config
+ (progn
+   (setq sp-base-key-bindings 'paredit)
+   (setq sp-autoskip-closing-pair 'always)
+   (setq sp-hybrid-kill-entire-symbol nil)
+   (sp-use-paredit-bindings)
+   (show-smartparens-global-mode +1)
+   (smartparens-global-mode 1)))
 
 (use-package helm
   :ensure t
@@ -283,20 +246,6 @@
 (setq compilation-auto-jump-to-first-error t)
 (setq compilation-scroll-output 'first-error)
 
-
-;; Control compilation window
-;; (defun my-compilation-hook ()
-;;   (when (not (get-buffer-window "*compilation*"))
-;;     (save-selected-window
-;;       (save-excursion
-;;         (let* ((w (split-window-vertically))
-;;                (h (window-height w)))
-;;           (select-window w)
-;;           (switch-to-buffer "*compilation*")
-;;           (shrink-window (- h compilation-window-height)))))))
-;; (add-hook 'compilation-mode-hook 'my-compilation-hook)
-
-
 ;; ansi colors in compile output
 (use-package ansi-color
   :ensure t)
@@ -322,12 +271,6 @@
   (progn
     (add-hook 'python-mode-hook 'my/python-mode-hook)))
 
-;; (use-package cyberpunk-theme
-;;   :ensure t
-;;   :config
-;;   (progn
-;;     (add-hook 'after-init-hook
-;;           (lambda () (load-theme 'cyberpunk t)))))
 
 (use-package material-theme
   :ensure t
@@ -335,7 +278,6 @@
   (progn
     (add-hook 'after-init-hook
           (lambda () (load-theme 'material t)))))
-
 
 
 (defun my-c-mode-setup ()
@@ -353,25 +295,6 @@
   :config
   (global-diff-hl-mode))
 
-
-;; (defun shade-color (intensity)
-;;   "compute new intensity of #rgb with alpha value for background"
-;;   (interactive "nIntensity of the shade : ")
-;;   (apply 'format "#%02x%02x%02x"
-;;          (mapcar (lambda (x)
-;;                    (if (> (lsh x -8) intensity)
-;;                        (- (lsh x -8) intensity)
-;;                      0))
-;;                  (color-values (cdr (assoc 'background-color (frame-parameters)))))))
-
-;; (use-package highline :ensure t
-;;   :init
-;;   (add-hook 'prog-mode-hook 'highline-mode)
-;;   :config
-;;   (progn
-;;     (set-face-background 'highline-face (shade-color 09))))
-
-
 (use-package dashboard
   :ensure t
   :config
@@ -381,6 +304,12 @@
   :config
   (setq-default save-place t)
   (setq save-place-file (expand-file-name ".places" user-emacs-directory)))
+
+(use-package powerline
+  :ensure t
+  :init
+  (powerline-default-theme)
+  )
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
